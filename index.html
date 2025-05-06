@@ -116,10 +116,13 @@
 
     <!-- 摄像头识别区域 -->
     <section id="cameraSection">
-      <button id="startCamera">打开摄像头识别</button>
-      <video id="camera" autoplay playsinline></video>
-      <canvas id="canvas" style="display:none;"></canvas>
-    </section>
+       <button id="captureBtn">拍照识别</button>
+       <button id="switchCamera">切换前后摄像头</button> <!-- 新按钮 -->
+       <button id="stopCamera">关闭摄像头</button>
+       <video id="camera" autoplay playsinline muted></video>
+       <canvas id="canvas" style="display:none;"></canvas>
+       <img id="snapshot" />
+</section>
 
     <!-- 识别结果区域 -->
     <section id="resultSection">
@@ -134,82 +137,132 @@
   </main>
 
   <script>
-    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/rBQmk5A8M/";
-    let model, maxPredictions;
+  const MODEL_URL = "https://teachablemachine.withgoogle.com/models/rBQmk5A8M/";
+  let model, maxPredictions;
+  let stream = null;
+  let animationId = null;
+  let currentFacingMode = "environment"; // 默认使用后置摄像头
 
-    window.onload = async () => {
-      // 加载模型
-      try {
-        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-        maxPredictions = model.getTotalClasses();
-        console.log("模型加载成功！");
-      } catch (err) {
-        alert("模型加载失败，请检查网络连接或模型链接。");
-        console.error(err);
-        return;
-      }
-
-      // 上传识别
-      document.getElementById("imageUpload").addEventListener("change", async (event) => {
-        const file = event.target.files[0];
-        if (!file || !model) return;
-
-        const preview = document.getElementById("preview");
-        preview.src = URL.createObjectURL(file);
-        preview.onload = async () => {
-          preview.style.display = "block";
-          document.getElementById("loading").style.display = "block";
-          const prediction = await model.predict(preview);
-          showResult(prediction);
-        };
-      });
-
-      // 摄像头识别
-      document.getElementById("startCamera").addEventListener("click", async () => {
-        const video = document.getElementById("camera");
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        video.style.display = "block";
-
-        video.onloadedmetadata = () => {
-          video.play();
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          const detectFrame = async () => {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            document.getElementById("loading").style.display = "block";
-            const prediction = await model.predict(canvas);
-            showResult(prediction);
-            requestAnimationFrame(detectFrame);
-          };
-
-          detectFrame();
-        };
-      });
-    };
-
-    function showResult(prediction) {
-      document.getElementById("loading").style.display = "none";
-
-      const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
-      document.getElementById("result").style.display = "block";
-      document.getElementById("freshness").innerText =
-        `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
-
-      let suggestion = "建议：";
-      if (best.className === "fresh") {
-        suggestion += "可以直接食用或凉拌。";
-      } else if (best.className === "medium") {
-        suggestion += "适合炒或煮，尽快食用。";
-      } else if (best.className === "bad") {
-        suggestion += "不建议食用。";
-      }
-      document.getElementById("recommendation").innerText = suggestion;
+  window.onload = async () => {
+    // 加载模型
+    try {
+      model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+      maxPredictions = model.getTotalClasses();
+      console.log("模型加载成功！");
+    } catch (err) {
+      alert("模型加载失败，请检查网络连接或模型链接。");
+      console.error(err);
+      return;
     }
-  </script>
+
+    // 上传识别
+    document.getElementById("imageUpload").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file || !model) return;
+
+      const preview = document.getElementById("preview");
+      preview.src = URL.createObjectURL(file);
+      preview.onload = async () => {
+        preview.style.display = "block";
+        document.getElementById("loading").style.display = "block";
+        const prediction = await model.predict(preview);
+        showResult(prediction);
+      };
+    });
+
+    // 摄像头打开识别
+    document.getElementById("startCamera").addEventListener("click", async () => {
+      await startCamera(currentFacingMode);
+    });
+
+    // 切换前后摄像头
+    document.getElementById("switchCamera").addEventListener("click", async () => {
+      // 切换摄像头方向
+      currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+      await stopCamera();
+      await startCamera(currentFacingMode);
+    });
+
+    // 摄像头关闭
+    document.getElementById("stopCamera").addEventListener("click", async () => {
+      await stopCamera();
+    });
+  };
+
+  // 打开摄像头
+  async function startCamera(facingMode = "environment") {
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facingMode }
+      });
+    } catch (err) {
+      alert("摄像头打开失败：" + err.message);
+      return;
+    }
+
+    video.srcObject = stream;
+    video.style.display = "block";
+
+    video.onloadedmetadata = () => {
+      video.play();
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const detectFrame = async () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        document.getElementById("loading").style.display = "block";
+        const prediction = await model.predict(canvas);
+        showResult(prediction);
+        animationId = requestAnimationFrame(detectFrame);
+      };
+
+      detectFrame();
+    };
+  }
+
+  // 关闭摄像头
+  async function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+
+    const video = document.getElementById("camera");
+    video.pause();
+    video.srcObject = null;
+    video.style.display = "none";
+    document.getElementById("loading").style.display = "none";
+  }
+
+  // 显示识别结果
+  function showResult(prediction) {
+    document.getElementById("loading").style.display = "none";
+    const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("freshness").innerText =
+      `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
+
+    let suggestion = "建议：";
+    if (best.className === "fresh") {
+      suggestion += "可以直接食用或凉拌。";
+    } else if (best.className === "medium") {
+      suggestion += "适合炒或煮，尽快食用。";
+    } else if (best.className === "bad") {
+      suggestion += "不建议食用。";
+    }
+    document.getElementById("recommendation").innerText = suggestion;
+  }
+</script>
+
 </body>
 </html>
