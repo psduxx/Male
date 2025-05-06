@@ -87,19 +87,19 @@
       display: inline-block;
     }
 
-   #loading {
+    #loading {
       display: none;
       font-size: 16px;
       color: #4caf50;
       margin-top: 10px;
       animation: blink 1s infinite;
     }
-  @keyframes blink {
-      0% { opacity: 1; }
-     50% { opacity: 0.3; }
-     100% { opacity: 1; }
-    }
 
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 
@@ -107,7 +107,6 @@
   <header>🥬鼠鼠蔬菜识别器</header>
 
   <main class="container">
-
     <!-- 上传识别区域 -->
     <section id="uploadSection">
       <label for="imageUpload">上传图片</label>
@@ -117,9 +116,9 @@
 
     <!-- 摄像头识别区域 -->
     <section id="cameraSection">
-      <button id="captureBtn">拍照识别</button>
+      <button id="startCamera">打开摄像头识别</button>
+      <video id="camera" autoplay playsinline></video>
       <canvas id="canvas" style="display:none;"></canvas>
-      <img id="snapshot" />
     </section>
 
     <!-- 识别结果区域 -->
@@ -132,84 +131,85 @@
     </section>
 
     <div id="loading">识别中...</div>
-
   </main>
 
- <script>
-  const MODEL_URL = "https://teachablemachine.withgoogle.com/models/rBQmk5A8M/";
-  let model, maxPredictions;
+  <script>
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/rBQmk5A8M/";
+    let model, maxPredictions;
 
-  window.onload = async () => {
-    model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-    maxPredictions = model.getTotalClasses();
-  };
+    window.onload = async () => {
+      // 加载模型
+      try {
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        maxPredictions = model.getTotalClasses();
+        console.log("模型加载成功！");
+      } catch (err) {
+        alert("模型加载失败，请检查网络连接或模型链接。");
+        console.error(err);
+        return;
+      }
 
-  // 上传图片后显示并自动识别
-  document.getElementById("imageUpload").addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    if (!file || !model) return;
+      // 上传识别
+      document.getElementById("imageUpload").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file || !model) return;
 
-    const preview = document.getElementById("preview");
-    preview.src = URL.createObjectURL(file);
-    preview.onload = async () => {
-      preview.style.display = "block";
-      document.getElementById("loading").style.display = "block";
-      const prediction = await model.predict(preview);
-      showResult(prediction);
+        const preview = document.getElementById("preview");
+        preview.src = URL.createObjectURL(file);
+        preview.onload = async () => {
+          preview.style.display = "block";
+          document.getElementById("loading").style.display = "block";
+          const prediction = await model.predict(preview);
+          showResult(prediction);
+        };
+      });
+
+      // 摄像头识别
+      document.getElementById("startCamera").addEventListener("click", async () => {
+        const video = document.getElementById("camera");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = "block";
+
+        video.onloadedmetadata = () => {
+          video.play();
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const detectFrame = async () => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            document.getElementById("loading").style.display = "block";
+            const prediction = await model.predict(canvas);
+            showResult(prediction);
+            requestAnimationFrame(detectFrame);
+          };
+
+          detectFrame();
+        };
+      });
     };
-  });
 
-  // 打开摄像头后实时识别
-  let stream;
-  let animationId;
-  document.getElementById("startCamera").addEventListener("click", async () => {
-    const video = document.getElementById("camera");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    function showResult(prediction) {
+      document.getElementById("loading").style.display = "none";
 
-    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-    video.style.display = "block";
+      const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
+      document.getElementById("result").style.display = "block";
+      document.getElementById("freshness").innerText =
+        `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
 
-    video.onloadedmetadata = () => {
-      video.play();
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      // 每帧自动识别
-      const detectFrame = async () => {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        document.getElementById("loading").style.display = "block";
-        const prediction = await model.predict(canvas);
-        showResult(prediction);
-        animationId = requestAnimationFrame(detectFrame);
-      };
-
-      detectFrame();
-    };
-  });
-
-  // 显示结果函数
-  function showResult(prediction) {
-    document.getElementById("loading").style.display = "none"; // 👈识别完隐藏
-    
-
-    const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
-    document.getElementById("result").style.display = "block";
-    document.getElementById("freshness").innerText =
-      `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
-
-    let suggestion = "建议：";
-    if (best.className === "fresh") {
-      suggestion += "可以直接食用或凉拌。";
-    } else if (best.className === "medium") {
-      suggestion += "适合炒或煮，尽快食用。";
-    } else if (best.className === "bad") {
-      suggestion += "不建议食用。";
+      let suggestion = "建议：";
+      if (best.className === "fresh") {
+        suggestion += "可以直接食用或凉拌。";
+      } else if (best.className === "medium") {
+        suggestion += "适合炒或煮，尽快食用。";
+      } else if (best.className === "bad") {
+        suggestion += "不建议食用。";
+      }
+      document.getElementById("recommendation").innerText = suggestion;
     }
-    document.getElementById("recommendation").innerText = suggestion;
-  }
-</script>
-
+  </script>
 </body>
 </html>
