@@ -149,7 +149,6 @@
     let lastDetectionTime = 0; // 上次检测的时间戳
 
     window.onload = async () => {
-      // 加载模型
       try {
         model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
         maxPredictions = model.getTotalClasses();
@@ -160,7 +159,6 @@
         return;
       }
 
-      // 上传识别
       document.getElementById("imageUpload").addEventListener("change", async (event) => {
         const file = event.target.files[0];
         if (!file || !model) return;
@@ -168,8 +166,13 @@
         const preview = document.getElementById("preview");
         preview.src = URL.createObjectURL(file);
         preview.onload = async () => {
-          const prediction = await model.predict(preview);
-          showResult(prediction, preview);
+          try {
+            const prediction = await model.predict(preview);
+            showResult(prediction);
+          } catch (err) {
+            console.error("预测失败：", err);
+            document.getElementById("resultText").innerText = "预测失败，请重试";
+          }
         };
       });
 
@@ -269,6 +272,11 @@
       document.getElementById("mainInterface").style.display = "none";
       document.getElementById("resultInterface").style.display = "block";
 
+      if (!prediction || prediction.length === 0) {
+        document.getElementById("resultText").innerText = "未检测到任何结果";
+        return;
+      }
+
       const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
 
       if (best.probability < CONFIDENCE_THRESHOLD) {
@@ -286,9 +294,14 @@
 
       prediction.forEach(pred => {
         if (pred.probability > CONFIDENCE_THRESHOLD) {
-          ctx.strokeStyle = "red";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(pred.bbox[0], pred.bbox[1], pred.bbox[2], pred.bbox[3]);
+          // 如果模型没有 bbox 数据，这里需要移除或替换
+          if (pred.bbox) {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(pred.bbox[0], pred.bbox[1], pred.bbox[2], pred.bbox[3]);
+          } else {
+            console.warn("模型未提供 bbox 数据，无法绘制边界框");
+          }
         }
       });
     }
