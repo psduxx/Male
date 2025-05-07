@@ -120,12 +120,10 @@
       <section id="cameraSection">
         <button id="startCamera">拍照识别</button>
         <video id="camera" autoplay playsinline muted></video>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <img id="snapshot" />
+        <canvas id="canvas"></canvas>
         <div id="cameraControls" style="display: none;">
           <button id="switchCamera">切换前后摄像头</button>
           <button id="stopCamera">关闭摄像头</button>
-          <button id="resetDetection">重置检测</button> <!-- 新增重置按钮 -->
         </div>
       </section>
     </section>
@@ -142,163 +140,158 @@
   </main>
 
   <script>
-  const MODEL_URL = "https://teachablemachine.withgoogle.com/models/rBQmk5A8M/";
-  let model, maxPredictions;
-  let stream = null;
-  let animationId = null;
-  let currentFacingMode = "environment"; // 默认使用后置摄像头
-  const CONFIDENCE_THRESHOLD = 0.9; // 提高置信度阈值
-  let lastDetectionTime = 0; // 上次检测的时间戳
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/rBQmk5A8M/";
+    let model, maxPredictions;
+    let stream = null;
+    let animationId = null;
+    let currentFacingMode = "environment"; // 默认使用后置摄像头
+    const CONFIDENCE_THRESHOLD = 0.9; // 提高置信度阈值
+    let lastDetectionTime = 0; // 上次检测的时间戳
 
-  window.onload = async () => {
-    // 加载模型
-    try {
-      model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-      maxPredictions = model.getTotalClasses();
-      console.log("模型加载成功！");
-    } catch (err) {
-      alert("模型加载失败，请检查网络连接或模型链接。");
-      console.error(err);
-      return;
-    }
-
-    // 上传识别
-    document.getElementById("imageUpload").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
-      if (!file || !model) return;
-
-      const preview = document.getElementById("preview");
-      preview.src = URL.createObjectURL(file);
-      preview.onload = async () => {
-        const prediction = await model.predict(preview);
-        showResult(prediction, preview);
-      };
-    });
-
-    // 摄像头打开识别
-    document.getElementById("startCamera").addEventListener("click", async () => {
-      await startCamera(currentFacingMode);
-      document.getElementById("cameraControls").style.display = "block";
-      document.getElementById("startCamera").style.display = "none";
-    });
-
-    // 切换前后摄像头
-    document.getElementById("switchCamera").addEventListener("click", async () => {
-      currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-      await stopCamera();
-      await startCamera(currentFacingMode);
-    });
-
-    // 摄像头关闭
-    document.getElementById("stopCamera").addEventListener("click", async () => {
-      await stopCamera();
-      document.getElementById("cameraControls").style.display = "none";
-      document.getElementById("startCamera").style.display = "block";
-    });
-
-    // 重置检测
-    document.getElementById("resetDetection").addEventListener("click", () => {
-      if (!animationId) {
-        animationId = requestAnimationFrame(detectFrame);
+    window.onload = async () => {
+      // 加载模型
+      try {
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        maxPredictions = model.getTotalClasses();
+        console.log("模型加载成功！");
+      } catch (err) {
+        alert("模型加载失败，请检查网络连接或模型链接。");
+        console.error(err);
+        return;
       }
-      document.getElementById("result").style.display = "none";
-    });
-  };
 
-  // 打开摄像头
-  async function startCamera(facingMode = "environment") {
-    const video = document.getElementById("camera");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+      // 上传识别
+      document.getElementById("imageUpload").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file || !model) return;
 
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingMode }
+        const preview = document.getElementById("preview");
+        preview.src = URL.createObjectURL(file);
+        preview.onload = async () => {
+          const prediction = await model.predict(preview);
+          showResult(prediction, preview);
+        };
       });
-    } catch (err) {
-      alert("摄像头打开失败：" + err.message);
-      return;
-    }
 
-    video.srcObject = stream;
-    video.style.display = "block";
+      // 摄像头打开识别
+      document.getElementById("startCamera").addEventListener("click", async () => {
+        await startCamera(currentFacingMode);
+        document.getElementById("cameraControls").style.display = "block";
+        document.getElementById("startCamera").style.display = "none";
+      });
 
-    video.onloadedmetadata = () => {
-      video.play();
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // 切换前后摄像头
+      document.getElementById("switchCamera").addEventListener("click", async () => {
+        currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+        await stopCamera();
+        await startCamera(currentFacingMode);
+      });
 
-      const detectFrame = async () => {
-        const now = Date.now();
-        if (now - lastDetectionTime < 1000) { // 限制每秒检测一次
-          animationId = requestAnimationFrame(detectFrame);
-          return;
-        }
-        lastDetectionTime = now;
+      // 摄像头关闭
+      document.getElementById("stopCamera").addEventListener("click", async () => {
+        await stopCamera();
+        document.getElementById("cameraControls").style.display = "none";
+        document.getElementById("startCamera").style.display = "block";
+      });
 
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const prediction = await model.predict(canvas);
-        showResult(prediction);
-        animationId = requestAnimationFrame(detectFrame);
-      };
-
-      detectFrame();
+      // 返回主界面
+      document.getElementById("backToMain").addEventListener("click", () => {
+        document.getElementById("resultInterface").style.display = "none";
+        document.getElementById("mainInterface").style.display = "block";
+      });
     };
-  }
 
-  // 关闭摄像头
-  async function stopCamera() {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
+    // 打开摄像头
+    async function startCamera(facingMode = "environment") {
+      const video = document.getElementById("camera");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode }
+        });
+      } catch (err) {
+        alert("摄像头打开失败：" + err.message);
+        return;
+      }
+
+      video.srcObject = stream;
+      video.style.display = "block";
+
+      video.onloadedmetadata = () => {
+        video.play();
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const detectFrame = async () => {
+          const now = Date.now();
+          if (now - lastDetectionTime < 1000) { // 限制每秒检测一次
+            animationId = requestAnimationFrame(detectFrame);
+            return;
+          }
+          lastDetectionTime = now;
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const prediction = await model.predict(canvas);
+
+          // 绘制追踪框
+          drawBoundingBox(prediction, ctx);
+
+          animationId = requestAnimationFrame(detectFrame);
+        };
+
+        detectFrame();
+      };
     }
 
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-      animationId = null;
+    // 关闭摄像头
+    async function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+
+      const video = document.getElementById("camera");
+      video.pause();
+      video.srcObject = null;
+      video.style.display = "none";
+      document.getElementById("loading").style.display = "none";
     }
 
-    const video = document.getElementById("camera");
-    video.pause();
-    video.srcObject = null;
-    video.style.display = "none";
-    document.getElementById("loading").style.display = "none";
-  }
+    // 显示识别结果
+    function showResult(prediction) {
+      document.getElementById("mainInterface").style.display = "none";
+      document.getElementById("resultInterface").style.display = "block";
 
-  // 显示识别结果
-  function showResult(prediction, preview) {
-    document.getElementById("loading").style.display = "none";
+      const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
 
-    // 找到置信度最高的预测结果
-    const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
+      if (best.probability < CONFIDENCE_THRESHOLD) {
+        document.getElementById("resultText").innerText = "未检测到目标物体";
+        return;
+      }
 
-    // 如果最高置信度低于阈值，显示“未检测到目标物体”
-    if (best.probability < CONFIDENCE_THRESHOLD) {
-      document.getElementById("result").style.display = "block";
-      document.getElementById("freshness").innerText = "未检测到目标物体";
-      document.getElementById("recommendation").innerText = "请调整摄像头角度或确保目标物体清晰可见。";
-      return;
+      document.getElementById("resultText").innerText =
+        `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
     }
 
-    // 显示固定的识别结果
-    document.getElementById("result").style.display = "block";
-    document.getElementById("freshness").innerText =
-      `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
+    // 绘制追踪框
+    function drawBoundingBox(prediction, ctx) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    let suggestion = "建议：";
-    if (best.className === "fresh") {
-      suggestion += "可以直接食用或凉拌。";
-    } else if (best.className === "medium") {
-      suggestion += "适合炒或煮，尽快食用。";
-    } else if (best.className === "bad") {
-      suggestion += "不建议食用。";
+      prediction.forEach(pred => {
+        if (pred.probability > CONFIDENCE_THRESHOLD) {
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(pred.bbox[0], pred.bbox[1], pred.bbox[2], pred.bbox[3]);
+        }
+      });
     }
-    document.getElementById("recommendation").innerText = suggestion;
-
-    // 停止检测
-    cancelAnimationFrame(animationId);
-    animationId = null;
-  }
   </script>
 </body>
 </html>
