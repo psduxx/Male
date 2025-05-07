@@ -107,33 +107,35 @@
   <header>🥬鼠鼠蔬菜识别器</header>
 
   <main class="container">
-    <!-- 上传识别区域 -->
-    <section id="uploadSection">
-      <label for="imageUpload">上传图片</label>
-      <input type="file" id="imageUpload" accept="image/*" />
-      <img id="preview" />
+    <!-- 主界面 -->
+    <section id="mainInterface">
+      <!-- 上传识别区域 -->
+      <section id="uploadSection">
+        <label for="imageUpload">上传图片</label>
+        <input type="file" id="imageUpload" accept="image/*" />
+        <img id="preview" />
+      </section>
+
+      <!-- 摄像头识别区域 -->
+      <section id="cameraSection">
+        <button id="startCamera">拍照识别</button>
+        <video id="camera" autoplay playsinline muted></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <img id="snapshot" />
+        <div id="cameraControls" style="display: none;">
+          <button id="switchCamera">切换前后摄像头</button>
+          <button id="stopCamera">关闭摄像头</button>
+          <button id="resetDetection">重置检测</button> <!-- 新增重置按钮 -->
+        </div>
+      </section>
     </section>
 
-    <!-- 摄像头识别区域 -->
-    <section id="cameraSection">
-      <button id="startCamera">拍照识别</button>
-      <video id="camera" autoplay playsinline muted></video>
-      <canvas id="canvas" style="display:none;"></canvas>
-      <img id="snapshot" />
-      <div id="cameraControls" style="display: none;">
-        <button id="switchCamera">切换前后摄像头</button>
-        <button id="stopCamera">关闭摄像头</button>
-        <button id="resetDetection">重置检测</button> <!-- 新增重置按钮 -->
-      </div>
-    </section>
-
-    <!-- 识别结果区域 -->
-    <section id="resultSection">
-      <div id="result">
-        <h3>识别结果</h3>
-        <p id="freshness">新鲜度：-</p>
-        <p id="recommendation">推荐做法：-</p>
-      </div>
+    <!-- 结果界面 -->
+    <section id="resultInterface" style="display: none;">
+      <h3>识别结果</h3>
+      <img id="resultImage" />
+      <p id="resultText"></p>
+      <button id="backToMain">返回</button>
     </section>
 
     <div id="loading">识别中...</div>
@@ -168,10 +170,8 @@
       const preview = document.getElementById("preview");
       preview.src = URL.createObjectURL(file);
       preview.onload = async () => {
-        preview.style.display = "block";
-        document.getElementById("loading").style.display = "block";
         const prediction = await model.predict(preview);
-        showResult(prediction);
+        showResult(prediction, preview);
       };
     });
 
@@ -266,7 +266,7 @@
   }
 
   // 显示识别结果
-  function showResult(prediction) {
+  function showResult(prediction, preview) {
     document.getElementById("loading").style.display = "none";
 
     // 找到置信度最高的预测结果
