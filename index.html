@@ -144,6 +144,7 @@
   let stream = null;
   let animationId = null;
   let currentFacingMode = "environment"; // 默认使用后置摄像头
+  const CONFIDENCE_THRESHOLD = 0.5; // 置信度阈值
 
   window.onload = async () => {
     // 加载模型
@@ -251,8 +252,19 @@
   // 显示识别结果
   function showResult(prediction) {
     document.getElementById("loading").style.display = "none";
+
+    // 找到置信度最高的预测结果
     const best = prediction.reduce((a, b) => a.probability > b.probability ? a : b);
 
+    // 如果最高置信度低于阈值，显示“未检测到目标物体”
+    if (best.probability < CONFIDENCE_THRESHOLD) {
+      document.getElementById("result").style.display = "block";
+      document.getElementById("freshness").innerText = "未检测到目标物体";
+      document.getElementById("recommendation").innerText = "请调整摄像头角度或确保目标物体清晰可见。";
+      return;
+    }
+
+    // 显示正常识别结果
     document.getElementById("result").style.display = "block";
     document.getElementById("freshness").innerText =
       `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
