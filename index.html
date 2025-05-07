@@ -123,6 +123,7 @@
       <div id="cameraControls" style="display: none;">
         <button id="switchCamera">切换前后摄像头</button>
         <button id="stopCamera">关闭摄像头</button>
+        <button id="resetDetection">重置检测</button> <!-- 新增重置按钮 -->
       </div>
     </section>
 
@@ -144,7 +145,8 @@
   let stream = null;
   let animationId = null;
   let currentFacingMode = "environment"; // 默认使用后置摄像头
-  const CONFIDENCE_THRESHOLD = 0.7; // 置信度阈值
+  const CONFIDENCE_THRESHOLD = 0.8; // 提高置信度阈值
+  let lastDetectionTime = 0; // 上次检测的时间戳
 
   window.onload = async () => {
     // 加载模型
@@ -193,6 +195,14 @@
       document.getElementById("cameraControls").style.display = "none";
       document.getElementById("startCamera").style.display = "block";
     });
+
+    // 重置检测
+    document.getElementById("resetDetection").addEventListener("click", () => {
+      if (!animationId) {
+        animationId = requestAnimationFrame(detectFrame);
+      }
+      document.getElementById("result").style.display = "none";
+    });
   };
 
   // 打开摄像头
@@ -219,8 +229,14 @@
       canvas.height = video.videoHeight;
 
       const detectFrame = async () => {
+        const now = Date.now();
+        if (now - lastDetectionTime < 1000) { // 限制每秒检测一次
+          animationId = requestAnimationFrame(detectFrame);
+          return;
+        }
+        lastDetectionTime = now;
+
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        document.getElementById("loading").style.display = "block";
         const prediction = await model.predict(canvas);
         showResult(prediction);
         animationId = requestAnimationFrame(detectFrame);
@@ -264,7 +280,7 @@
       return;
     }
 
-    // 显示正常识别结果
+    // 显示固定的识别结果
     document.getElementById("result").style.display = "block";
     document.getElementById("freshness").innerText =
       `识别结果：${best.className}（置信度 ${(best.probability * 100).toFixed(2)}%）`;
@@ -278,6 +294,10 @@
       suggestion += "不建议食用。";
     }
     document.getElementById("recommendation").innerText = suggestion;
+
+    // 停止检测
+    cancelAnimationFrame(animationId);
+    animationId = null;
   }
   </script>
 </body>
