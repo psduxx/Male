@@ -116,13 +116,15 @@
 
     <!-- 摄像头识别区域 -->
     <section id="cameraSection">
-       <button id="captureBtn">拍照识别</button>
-       <button id="switchCamera">切换前后摄像头</button> <!-- 新按钮 -->
-       <button id="stopCamera">关闭摄像头</button>
-       <video id="camera" autoplay playsinline muted></video>
-       <canvas id="canvas" style="display:none;"></canvas>
-       <img id="snapshot" />
-</section>
+      <button id="startCamera">拍照识别</button>
+      <video id="camera" autoplay playsinline muted></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <img id="snapshot" />
+      <div id="cameraControls" style="display: none;">
+        <button id="switchCamera">切换前后摄像头</button>
+        <button id="stopCamera">关闭摄像头</button>
+      </div>
+    </section>
 
     <!-- 识别结果区域 -->
     <section id="resultSection">
@@ -173,11 +175,12 @@
     // 摄像头打开识别
     document.getElementById("startCamera").addEventListener("click", async () => {
       await startCamera(currentFacingMode);
+      document.getElementById("cameraControls").style.display = "block";
+      document.getElementById("startCamera").style.display = "none";
     });
 
     // 切换前后摄像头
     document.getElementById("switchCamera").addEventListener("click", async () => {
-      // 切换摄像头方向
       currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
       await stopCamera();
       await startCamera(currentFacingMode);
@@ -186,6 +189,8 @@
     // 摄像头关闭
     document.getElementById("stopCamera").addEventListener("click", async () => {
       await stopCamera();
+      document.getElementById("cameraControls").style.display = "none";
+      document.getElementById("startCamera").style.display = "block";
     });
   };
 
@@ -262,7 +267,6 @@
     }
     document.getElementById("recommendation").innerText = suggestion;
   }
-</script>
-
+  </script>
 </body>
 </html>
