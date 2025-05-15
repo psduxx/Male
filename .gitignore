@@ -1,0 +1,15 @@
+# Python 缓存文件
+__pycache__/
+*.pyc
+*.pyo
+
+# 虚拟环境
+venv/
+env/
+
+# 模型文件
+*.pt
+
+# IDE 配置文件
+.vscode/
+.idea/
