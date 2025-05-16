@@ -3,11 +3,29 @@ from ultralytics import YOLO
 from PIL import Image
 import io
 import os
+import requests
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
+# Google Drive 模型文件 URL
+MODEL_URL = "https://drive.google.com/uc?id=15XBbny9sOXg6eH5XUtMIVuHejUK_Uf9w&export=download"
+MODEL_PATH = "best.pt"
+
+# 检查模型文件是否存在，如果不存在则从 Google Drive 下载
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model from Google Drive...")
+    response = requests.get(MODEL_URL, stream=True)
+    if response.status_code == 200:
+        with open(MODEL_PATH, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        print("Model downloaded successfully!")
+    else:
+        print("Failed to download model. Please check the URL.")
+
 # 加载 YOLO 模型
-model = YOLO("D:/dataset/best.pt")  # 替换为你的 .pt 文件路径
+model = YOLO(MODEL_PATH)
 
 @app.route("/")
 def index():
