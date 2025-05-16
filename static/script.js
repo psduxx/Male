@@ -26,7 +26,8 @@ uploadButton.addEventListener("click", async () => {
   formData.append("image", file);
 
   try {
-    const response = await fetch("/predict", {
+    // 调用 Render 上的 Flask API
+    const response = await fetch("https://flask-yolo-app-3h9r.onrender.com/predict", {
       method: "POST",
       body: formData,
     });
