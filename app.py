@@ -4,8 +4,10 @@ from PIL import Image
 import io
 import os
 import requests
+from flask_cors import CORS
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+CORS(app)
 
 # Google Drive 模型文件 URL
 MODEL_URL = "https://drive.google.com/uc?id=15XBbny9sOXg6eH5XUtMIVuHejUK_Uf9w&export=download"
