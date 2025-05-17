@@ -6,6 +6,9 @@ import os
 import requests
 from flask_cors import CORS
 
+# 设置 YOLO 配置目录为 /tmp
+os.environ["YOLO_CONFIG_DIR"] = "/tmp"
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
 
