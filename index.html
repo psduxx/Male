@@ -15,12 +15,13 @@
       <label for="imageUpload">上传图片</label>
       <input type="file" id="imageUpload" accept="image/*" />
       <button id="uploadButton">识别</button>
-      <img id="preview" />
+      <img id="preview" style="max-width: 100%; display: none; margin-top: 20px;" />
     </section>
 
     <!-- 结果显示区域 -->
     <section id="resultSection" style="display: none;">
       <h2>识别结果</h2>
+      <img id="resultImg" style="max-width: 100%; display: block; margin-top: 20px;" />
       <p id="resultText"></p>
     </section>
   </main>

@@ -5,9 +5,14 @@ body {
   padding: 0;
 }
 
+header, .main-header {
+  background-color: #4caf50 !important;
+  color: #fff !important;
+}
+
 header {
   background-color: #4caf50;
-  color: white;
+  color: rgb(255, 255, 255);
   padding: 10px 0;
   font-size: 24px;
 }
@@ -34,4 +39,207 @@ button {
 
 button:hover {
   background-color: #45a049;
+}
+
+.card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 24px;
+  margin: 24px auto;
+  max-width: 400px;
+}
+
+.btn-primary {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1.1em;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.preview-img, .result-img {
+  display: block;
+  margin: 18px auto 0 auto;
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: #f7f7f7;
+  font-size: 1.1em;
+}
+
+.header-left, .header-right {
+  color: #fff !important;
+  background: transparent;
+  font-weight: normal;
+}
+
+.header-title { font-weight: bold; font-size: 1.2em; }
+
+.search-bar {
+  display: flex;
+  margin: 18px 0;
+  gap: 8px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.article-section {
+  margin: 18px 0;
+}
+
+.article-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.camera-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.camera-center {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.camera-fullscreen {
+  position: fixed;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: #000;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.camera-box {
+  position: relative;
+  width: 320px;
+  height: 240px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+#video, #canvas {
+  width: 320px !important;
+  height: 240px !important;
+  position: absolute;
+  left: 0; top: 0;
+  object-fit: cover;
+  background: #000;
+}
+
+#video {
+  z-index: 1;
+  display: block;
+}
+
+#canvas {
+  z-index: 2;
+  pointer-events: none;
+  background: transparent !important;
+}
+
+.camera-btn {
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px; height: 44px;
+  font-size: 1.3em;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.camera-bottom-bar {
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 32px;
+  left: 0;
+}
+
+.capture-btn {
+  position: absolute;
+  left: 50%;
+  bottom: -32px;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  font-size: 2em;
+  background: #4caf50;
+}
+
+.switch-btn {
+  position: absolute;
+  left: 50%;
+  bottom: -32px;
+  transform: translateX(-120%);
+}
+
+.flash-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+
+.album-btn {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.zoom-btn {
+  margin: 2px 0;
+}
+
+#backBtn {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 9999;
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }

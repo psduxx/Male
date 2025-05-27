@@ -5,26 +5,80 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>鼠鼠蔬菜识别器</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .camera-center {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
 </head>
 <body>
-  <header>🥬鼠鼠蔬菜识别器</header>
-
+  <header class="main-header">
+    <span id="location" class="header-left">定位中...</span>
+    <span class="header-title">🥬鼠鼠蔬菜识别器</span>
+    <span id="weather" class="header-right">天气加载中...</span>
+  </header>
   <main class="container">
-    <!-- 上传识别区域 -->
-    <section id="uploadSection">
-      <label for="imageUpload">上传图片</label>
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="搜索蔬菜或识别技巧..." />
+      <button id="searchBtn">搜索</button>
+    </div>
+    <!-- Article 专栏 -->
+    <section id="articleSection" class="article-section">
+      <h2>蔬菜识别技巧</h2>
+      <div id="articles">
+        {% for article in articles %}
+        <article class="article-card">
+          <h3>{{ article.title }}</h3>
+          <p>{{ article.content }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    <!-- 下面是你的功能入口按钮 -->
+    <!-- 初始选择区 -->
+    <div id="homeSection">
+      <button id="goUpload" class="btn-primary" style="margin:30px 0 20px 0;width:80%;">上传图片识别</button>
+      <button id="goCamera" class="btn-primary" style="margin:10px 0;width:80%;">摄像头实时识别</button>
+    </div>
+    <!-- 上传图片识别区 -->
+    <div class="card upload-card" id="uploadSection" style="display:none;">
+      <h2>上传图片识别</h2>
       <input type="file" id="imageUpload" accept="image/*" />
-      <button id="uploadButton">识别</button>
-      <img id="preview" />
-    </section>
-
-    <!-- 结果显示区域 -->
-    <section id="resultSection" style="display: none;">
-      <h2>识别结果</h2>
+      <button id="uploadButton" class="btn-primary">识别</button>
+      <img id="preview" class="preview-img" style="display:none;" />
       <p id="resultText"></p>
-    </section>
-  </main>
+    </div>
+    <!-- 摄像头识别区 -->
+    <div class="card camera-card" id="cameraSection" style="display:none;">
+      <div class="camera-box">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <!-- 右上角闪光灯 -->
+        <button id="flashBtn" class="camera-btn flash-btn" title="闪光灯">
+          <span id="flashIcon">🔦</span>
+        </button>
+        <!-- 左下角相册 -->
+        <button id="albumBtn" class="camera-btn album-btn" title="相册">
+          <span>🖼️</span>
+          <input type="file" id="albumInput" accept="image/*" style="display:none;">
+        </button>
+        <!-- 右下角缩放 -->
+        <div class="zoom-controls">
+          <button id="zoomInBtn" class="camera-btn zoom-btn">+</button>
+          <button id="zoomOutBtn" class="camera-btn zoom-btn">-</button>
+        </div>
+        <!-- 底部中间切换摄像头按钮 -->
+        <button id="switchCameraBtn" class="camera-btn switch-btn" title="切换前后摄像头">🔄</button>
 
+      </div>
+    </div>
+    <button id="backBtn" style="display:none;">返回</button>
+  </main>
+    
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
